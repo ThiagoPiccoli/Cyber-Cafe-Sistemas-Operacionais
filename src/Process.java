@@ -9,4 +9,9 @@ public class Process {
         this.type = type;
         this.cycles = cycles;
     }
+    public void processPrint() {
+        System.out.println("Type: "+type);
+        System.out.println("Cycles: "+cycles);
+
+    }
 }

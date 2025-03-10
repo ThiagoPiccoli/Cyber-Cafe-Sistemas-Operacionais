@@ -1,24 +1,35 @@
+import java.util.LinkedList;
+
 public class ProcessCreator implements Runnable {
+    private LinkedList<Process> processes = new LinkedList<>();
 
     @Override
     public void run() {
-        for (int i = 1; i <= 10; i++) {
+        for (int aux = 0; aux < 1000; aux++) {
             try {
                 Thread.sleep(10);
-                char type=' ';
-                int cycles = (int)Math.round((Math.random()*8))+2;
-                int intType = (int)Math.round((Math.random()*2));
-                if(intType == 0){
+
+                char type = ' ';
+                int cycles = (int) Math.round((Math.random() * 8)) + 2;
+                int intType = (int) Math.round((Math.random() * 2));
+
+                if (intType == 0) {
                     type = 'G';
-                }else if(intType == 1){
+                } else if (intType == 1) {
                     type = 'F';
-                }else if(intType == 2){
-                    type = 's';
+                } else if (intType == 2) {
+                    type = 'S';
                 }
-                Process newProcess = new Process(type,cycles);
+//                Process process = new Process(type, cycles);
+                processes.add(new Process(type, cycles));
             } catch (InterruptedException e) {
                 System.out.println("Thread was interrupted");
             }
         }
+
+    }
+
+    public LinkedList<Process> getProcess() {
+        return processes;
     }
 }
