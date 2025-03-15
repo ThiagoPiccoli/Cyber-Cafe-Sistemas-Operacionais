@@ -4,7 +4,7 @@ import java.util.concurrent.Semaphore;
 /*TODO Como evitar o starvation ex.: se uma fila for grande o sufiente e o café fechar antes ocorreu starvation?
 TODO como checar starvation e deadlock?
 */
-public class App extends RuntimeException {
+public class App{
     public static void main(String[] args) throws InterruptedException {
         Semaphore pcs = new Semaphore(10);
         Semaphore headsets = new Semaphore(6);
@@ -16,24 +16,27 @@ public class App extends RuntimeException {
         thread.start();
 
         while (thread.isAlive()) {//se a fila estiver em criação fica em loop
+            Thread.sleep(500);
             while (!processes.isEmpty()) {//se estiver vazio aguarda um tempo
                 int aux = 0;
-                while (processes.get(aux).isRunning()) {//se está em execução passa para o próximo processo
-                    if(processes.size() > aux){
+                while (processes.size() > aux+1){
+                    if(processes.get(aux).isRunning()){
                         aux++;
-                    }
+                    }else break;
                 }
                 if (processes.get(aux).isDone()) {//se está pronto remove da fila de processos e adiciona na fila de finalizados
                     finished_processes.add(processes.get(aux));
                     processes.remove(aux);
+//                    System.out.println("Tamo removendo tamo removendo");
+                }else{
+                    Process process = creator.getProcess().get(aux);
+                    Thread t = new Thread(process);
+                    t.start();
+//                    Thread.sleep(100);
                 }
-                Process process = creator.getProcess().get(aux);
-                Thread t = new Thread(process);
-                t.start();
-                Thread.sleep(50);
             }
-            System.out.println("Aguardando processo!");
-            Thread.sleep(50);
+//            System.out.println("Aguardando processo!");
+//            Thread.sleep(100);
         }
         if (!processes.isEmpty()) {
             while (!processes.isEmpty()) {//se estiver vazio aguarda um tempo

@@ -2,19 +2,24 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.concurrent.Semaphore;
 
+
 public class Process implements Runnable {
-    private char type; // G for gamer, F for freelancer, S for student
+    final long CYCLE_TIME=100;
+    private final char type; // G for gamer, F for freelancer, S for student
     private boolean isFirstDone;
     private boolean isDone;
     private boolean isRunning;
-    private int cycles;
+    private long cycles;
 
-    private Semaphore pcs;
-    private Semaphore headsets;
-    private Semaphore chairs;
+    private final Semaphore pcs;
+    private final Semaphore headsets;
+    private final Semaphore chairs;
 
-    private long startTime; // Tempo de início em ns
+    private final long startTime; // Tempo de início em ns
     private long queueTime; // Tempo na fila
+    private long firstExecTime;
+    private long lastExecTime;
+    private long releaseTime;
     private long totalTime; // Tempo total
     private long executionTime; // Tempo execução
 
@@ -40,18 +45,23 @@ public class Process implements Runnable {
             if (type == 'G') {
                 try {
                     if (chairs.availablePermits() >= 1) {
+                        lastExecTime = System.nanoTime();
                         chairs.acquire();
                         isRunning = true;
-                        System.out.println("Recursos adquiridos! Executando processo...");
+//                        System.out.println("Recursos adquiridos! Executando processo...");
+                        long execTime = System.nanoTime();
                         executionTime();
+                        execTime = System.nanoTime() - execTime;
+                        executionTime += execTime;//ajustar tempo total
                         chairs.release();
+                        releaseTime = System.nanoTime();
                         isRunning = false;
                         isDone = true;
-                        queueTime = executionTime - startTime;
-                        totalTime = executionTime + queueTime;//*não estamos levando o tempo de execução total da thread em consideração
-                        System.out.println("Execução completa, recursos liberados!");
+                        totalTime = System.nanoTime()-startTime;//*não estamos levando o tempo de execução total da thread em consideração
+                        queueTime = totalTime-(cycles*CYCLE_TIME);
+//                        System.out.println("Execução completa, recursos liberados!");
                     } else {
-                        System.out.println("pc não disponivel, execução interrompida!");
+//                        System.out.println("pc não disponivel, execução interrompida!");
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -59,20 +69,25 @@ public class Process implements Runnable {
             } else if (type == 'F') {
                 try {
                     if (headsets.availablePermits() >= 1) {
+                        lastExecTime = System.nanoTime();
                         headsets.acquire();
                         isRunning = true;
-                        System.out.println("Recursos adquiridos! Executando processo...");
+//                        System.out.println("Recursos adquiridos! Executando processo...");
+                        long execTime = System.nanoTime();
                         executionTime();
+                        execTime = System.nanoTime() - execTime;
+                        executionTime += execTime;//ajustar tempo total
                         headsets.release();
+                        releaseTime = System.nanoTime();
                         isRunning = false;
                         isDone = true;
                         isFirstDone = true;
-                        queueTime = executionTime - startTime;
-                        totalTime = executionTime + queueTime;//*não estamos levando o tempo de execução total da thread em consideração
+                        totalTime = System.nanoTime()-startTime;//*não estamos levando o tempo de execução total da thread em consideração
+                        queueTime = totalTime-(cycles*CYCLE_TIME);
 
-                        System.out.println("Execução completa, recursos liberados!");
+//                        System.out.println("Execução completa, recursos liberados!");
                     } else {
-                        System.out.println("pc não disponivel, execução interrompida!");
+//                        System.out.println("pc não disponivel, execução interrompida!");
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -81,20 +96,26 @@ public class Process implements Runnable {
         } else if (type == 'S') {//está aparentemente correto, mas TODO ainda temos que reposicionar na fila
             try {
                 if (pcs.availablePermits() >= 1) {
+                    firstExecTime = System.nanoTime();
+                    lastExecTime = System.nanoTime();
                     pcs.acquire();
                     isRunning = true;
-                    System.out.println("Recursos adquiridos! Executando processo...");
+//                    System.out.println("Recursos adquiridos! Executando processo...");
+                    long execTime = System.nanoTime();
                     executionTime();
+                    execTime = System.nanoTime() - execTime;
+                    executionTime += execTime;//ajustar tempo total
                     pcs.release();
+                    releaseTime = System.nanoTime();
                     isRunning = false;
                     isDone = true;
                     isFirstDone = true;
-                    queueTime = executionTime - startTime;
-                    totalTime = executionTime + queueTime;//*não estamos levando o tempo de execução total da thread em consideração
+                    totalTime = System.nanoTime()-startTime;//*não estamos levando o tempo de execução total da thread em consideração
+                    queueTime = totalTime-(cycles*CYCLE_TIME);
 
-                    System.out.println("Execução completa, recursos liberados!");
+//                    System.out.println("Execução completa, recursos liberados!");
                 } else {
-                    System.out.println("pc não disponivel, execução interrompida!");
+//                    System.out.println("pc não disponivel, execução interrompida!");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -104,22 +125,27 @@ public class Process implements Runnable {
                 if (pcs.availablePermits() >= 1) {//erro de conseguir e no momento de executar não ter mais a permit
                     pcs.acquire();
                     isRunning = true;
-                    System.out.println("pc disponivel!");
+//                    System.out.println("pc disponivel!");
                     if (headsets.availablePermits() >= 1) {
+                        firstExecTime = System.nanoTime();
                         headsets.acquire();
-                        System.out.println("headset disponivel!");
-                        System.out.println("Recursos adquiridos! Executando processo...");
+//                        System.out.println("headset disponivel!");
+//                        System.out.println("Recursos adquiridos! Executando processo...");
+                        long execTime = System.nanoTime();
                         executionTime();
+                        execTime = System.nanoTime() - execTime;
+                        executionTime += execTime;//ajustar tempo total
                         pcs.release();
                         headsets.release();
+                        releaseTime = System.nanoTime();
                         isRunning = false;
-                        System.out.println("Execução completa, recursos liberados!");
+//                        System.out.println("Execução completa, recursos liberados!");
                     } else {
-                        System.out.println("Execução bloqueada!");
+//                        System.out.println("Execução bloqueada!");
                         pcs.release();
                     }
                 } else {
-                    System.out.println("Execução bloqueada!");
+//                    System.out.println("Execução bloqueada!");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -129,22 +155,27 @@ public class Process implements Runnable {
                 if (pcs.availablePermits() >= 1) {//erro de conseguir e no momento de executar não ter mais a permit
                     isRunning = true;
                     pcs.acquire();
-                    System.out.println("pc disponivel!");
+//                    System.out.println("pc disponivel!");
                     if (chairs.availablePermits() >= 1) {
+                        firstExecTime = System.nanoTime();
                         chairs.acquire();
-                        System.out.println("headset disponivel!");
-                        System.out.println("Recursos adquiridos! Executando processo...");
+//                        System.out.println("headset disponivel!");
+//                        System.out.println("Recursos adquiridos! Executando processo...");
+                        long execTime = System.nanoTime();
                         executionTime();
+                        execTime = System.nanoTime() - execTime;
+                        executionTime += execTime;//ajustar tempo total
                         pcs.release();
                         chairs.release();
+                        releaseTime = System.nanoTime();
                         isRunning = false;
-                        System.out.println("Execução completa, recursos liberados!");
+//                        System.out.println("Execução completa, recursos liberados!");
                     } else {
-                        System.out.println("Execução bloqueada!");
+//                        System.out.println("Execução bloqueada!");
                         pcs.release();
                     }
                 } else {
-                    System.out.println("Execução bloqueada!");
+//                    System.out.println("Execução bloqueada!");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -153,24 +184,24 @@ public class Process implements Runnable {
     }
 
     public void executionTime() {
-        System.out.println("Executando thread: " + this.type + " - " + this.cycles + " - " + this.queueTime);
-        long execTime = System.nanoTime();
+//        System.out.println("Executando thread: " + this.type + " - " + this.cycles + " - " + this.queueTime);
+        long startExec = System.nanoTime();
         try {
-            Thread.sleep(100L * cycles);//espera o tempo de execução da "tarefa"
+            Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        execTime = System.nanoTime() - execTime;
-        executionTime += execTime;//ajustar tempo total
+        executionTime += (System.nanoTime() - startExec);
         this.isFirstDone = true;
     }
 
     public void finalprocessPrint() {
         System.out.print("Type: " + type);
         System.out.print(" Cycles: " + cycles);
-        System.out.print(" Start Time: " + this.startTime / 1000000 + "ms ");
-        System.out.print(" Execution Time: " + executionTime / 1000000 + "ms ");
-        System.out.print(" Queue Time: " + executionTime / 1000000 + "ms ");
+        System.out.print(" Start Time: " + this.startTime / 1000000L + "ms ");
+        System.out.print(" Execution Time: " + executionTime / 1000000L + "ms ");
+        System.out.print(" Queue Time: " + queueTime / 1000000L + "ms ");
+        System.out.println(" Total Time: " + totalTime / 1000000L + "ms ");
     }
 
     public boolean isFirstDone() {

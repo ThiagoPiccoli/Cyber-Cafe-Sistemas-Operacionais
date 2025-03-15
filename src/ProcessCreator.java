@@ -15,7 +15,7 @@ public class ProcessCreator implements Runnable {
     public void run() {
         for (int aux = 0; aux < 10; aux++) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(100L);
                 char type = ' ';
                 int cycles = (int) Math.round((Math.random() * 8)) + 2;
                 int intType = (int) Math.round((Math.random() * 2));
