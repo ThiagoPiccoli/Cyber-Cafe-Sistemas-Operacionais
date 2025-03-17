@@ -12,6 +12,7 @@ public class App{
         ProcessCreator creator = new ProcessCreator(pcs, headsets, chairs);
         LinkedList<Process> processes = creator.getProcess();
         LinkedList<Process> finished_processes = new LinkedList<>();
+        LinkedList<Thread> threadsRunning = new LinkedList<>();
         Thread thread = new Thread(creator);
         thread.start();
 
@@ -27,31 +28,30 @@ public class App{
                 if (processes.get(aux).isDone()) {//se está pronto remove da fila de processos e adiciona na fila de finalizados
                     finished_processes.add(processes.get(aux));
                     processes.remove(aux);
-//                    System.out.println("Tamo removendo tamo removendo");
                 }else{
                     Process process = creator.getProcess().get(aux);
                     Thread t = new Thread(process);
                     t.start();
-//                    Thread.sleep(100);
                 }
             }
-//            System.out.println("Aguardando processo!");
-//            Thread.sleep(100);
+
         }
         if (!processes.isEmpty()) {
-            while (!processes.isEmpty()) {//se estiver vazio aguarda um tempo
+            while (!processes.isEmpty()) {
                 int aux = 0;
                 Thread.sleep(50);
                 while (processes.get(aux).isRunning()) {//se está em execução passa para o próximo processo
                     aux++;
+                    Thread.sleep(50);
                 }
-                if (processes.get(aux).isDone()) {//se está pronto remove da fila de processos e adiciona na fila de finalizados
+                if (processes.get(aux).isDone() && !processes.get(aux).isRunning()) {//se está pronto remove da fila de processos e adiciona na fila de finalizados
                     finished_processes.add(processes.get(aux));
                     processes.remove(aux);
                 }
                 Process process = creator.getProcess().get(aux);
                 Thread t = new Thread(process);
                 t.start();
+                //threadsRunning.add(t);
             }
         }
         for (Process process : finished_processes) {
