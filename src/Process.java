@@ -1,14 +1,13 @@
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.concurrent.Semaphore;
-
+import java.util.concurrent.TimeUnit;
 
 public class Process implements Runnable {
     final long CYCLE_TIME=100;
+    final long TRY_AQUIRE_TIME=100;
     private final char type; // G for gamer, F for freelancer, S for student
-    private boolean isFirstDone;
-    private boolean isDone;
-    private boolean isRunning;
+    private boolean is_first_done;
+    private boolean is_done;
+    private boolean is_running;
     private long cycles;
     private String id;
 
@@ -16,180 +15,219 @@ public class Process implements Runnable {
     private final Semaphore headsets;
     private final Semaphore chairs;
 
-    private final long startTime; // Tempo de início em ns
-    private long queueTime; // Tempo na fila
-    private long totalTime; // Tempo total
-    private long executionTime; // Tempo execução
+    private final long start_time; // Tempo de início em ns
+    private long queue_time; // Tempo na fila
+    private long total_time; // Tempo total
+    private long execution_time; // Tempo execução
 
     Process(char type, int cycles, Semaphore pcs, Semaphore headsets, Semaphore chairs) {
-        this.isRunning = false;
+        this.is_running = false;
         this.id="";
         this.type = type;
         this.cycles = cycles;
-        this.queueTime = 0;
-        this.totalTime = 0;
-        this.executionTime = 0;
-        this.isFirstDone = false;
-        this.isDone = false;
+        this.queue_time = 0;
+        this.total_time = 0;
+        this.execution_time = 0;
+        this.is_first_done = false;
+        this.is_done = false;
         this.pcs = pcs;
         this.headsets = headsets;
         this.chairs = chairs;
-        this.startTime = System.nanoTime(); // Pegando o tempo atual no momento da criação da thread
+        this.start_time = System.nanoTime(); // Pegando o tempo atual no momento da criação da thread
     }
 
     @Override
     public void run() {
         long startRunTime=System.nanoTime();
-        isRunning = true;
-        if (isFirstDone && !isDone) {
+        is_running = true;
+        if (is_first_done && !is_done) {//Primeira parte pronta
             if (type == 'G') {
                 try {
-                    if (chairs.availablePermits() >= 1) {
-                        chairs.acquire();
-                        isRunning = true;
-                        long execTime = System.nanoTime();
-                        executionTime();
-                        execTime = System.nanoTime() - execTime;
+                    if(chairs.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS)){
+                        System.out.println("Chairs acquired");
+                        try {
+                            long startExec = System.nanoTime();
+                            Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
+                            long finalExec = System.nanoTime();
+                            this.execution_time += (finalExec - startExec);
+                            if (this.is_first_done) {
+
+                                System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
+                            }
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         chairs.release();
-                        isDone = true;
-                        totalTime = System.nanoTime()-startTime;//*não estamos levando o tempo de execução total da thread em consideração
-                        queueTime = totalTime-(cycles*CYCLE_TIME);
-                    } else {
-                    }
+                        System.out.println("Chairs released");
+                        total_time = System.nanoTime()-start_time;
+                        is_done = true;
+                    }else System.out.println("Request denied!");
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             } else if (type == 'F') {
                 try {
-                    if (headsets.availablePermits() >= 1) {
-                        headsets.acquire();
-                        isRunning = true;
-                        long execTime = System.nanoTime();
-                        executionTime();
-                        execTime = System.nanoTime() - execTime;
+                    if(headsets.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS)){
+                        System.out.println("Headsets acquired");
+                        try {
+                            long startExec = System.nanoTime();
+                            Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
+                            long finalExec = System.nanoTime();
+                            this.execution_time += (finalExec - startExec);
+                            if (this.is_first_done) {
+
+                                System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
+                            }
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         headsets.release();
-                        isDone = true;
-                        isFirstDone = true;
-                        totalTime = System.nanoTime()-startTime;//*não estamos levando o tempo de execução total da thread em consideração
-                        queueTime = totalTime-(cycles*CYCLE_TIME);
-                    }
+                        System.out.println("Headsets released");
+                        total_time = System.nanoTime()-start_time;
+                        is_done = true;
+                    }else System.out.println("Request denied!");
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
         } else if (type == 'S') {//está aparentemente correto, mas TODO ainda temos que reposicionar na fila
             try {
-                if (pcs.availablePermits() >= 1) {
-                    pcs.acquire();
-                    isRunning = true;
-                    long execTime = System.nanoTime();
-                    executionTime();
-                    execTime = System.nanoTime() - execTime;
+                if (pcs.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS)) {
+                    System.out.println("pcs acquired");
+                    try {
+                        long startExec = System.nanoTime();
+                        Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
+                        long finalExec = System.nanoTime();
+                        this.execution_time += (finalExec - startExec);
+                            System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    is_done = true;
                     pcs.release();
-                    isDone = true;
-                    isFirstDone = true;
-                    totalTime = System.nanoTime()-startTime;//*não estamos levando o tempo de execução total da thread em consideração
-                    queueTime = totalTime-(cycles*CYCLE_TIME);
-                }
+                    System.out.println("pcs released");
+                    total_time = System.nanoTime() - start_time;
+                    is_done = true;
+                }else System.out.println("Request denied!");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         } else if (type == 'G') {
             try {
-                if (pcs.availablePermits() >= 1) {//erro de conseguir e no momento de executar não ter mais a permit
-                    pcs.acquire();
-                    isRunning = true;
-                    if (headsets.availablePermits() >= 1) {
-                        headsets.acquire();
-                        long execTime = System.nanoTime();
-                        executionTime();
-                        execTime = System.nanoTime() - execTime;
-                        pcs.release();
-                        headsets.release();
-                    } else {
-                        pcs.release();
+                if(pcs.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS) && headsets.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS)){
+                    System.out.println("Pcs and Headsets acquired");
+                    try {
+                        long startExec = System.nanoTime();
+                        Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
+                        long finalExec = System.nanoTime();
+                        this.execution_time += (finalExec - startExec);
+                            System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
-                }
+                    is_first_done = true;
+                    pcs.release();
+                    headsets.release();
+                    System.out.println("Pcs and Headsets released");
+                    total_time = System.nanoTime()-start_time;
+                }else System.out.println("Request denied!");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         } else if (type == 'F') {
             try {
-                if (pcs.availablePermits() >= 1) {//erro de conseguir e no momento de executar não ter mais a permit
-                    isRunning = true;
-                    pcs.acquire();
-                    if (chairs.availablePermits() >= 1) {
-                        chairs.acquire();
-                        long execTime = System.nanoTime();
-                        executionTime();
-                        execTime = System.nanoTime() - execTime;
-                        pcs.release();
-                        chairs.release();
-                    } else {
-                        pcs.release();
+                if(pcs.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS) && chairs.tryAcquire(TRY_AQUIRE_TIME, TimeUnit.MILLISECONDS)){
+                    System.out.println("Pcs and Chairs acquired");
+                    try {
+                        long startExec = System.nanoTime();
+                        Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
+                        long finalExec = System.nanoTime();
+                        this.execution_time += (finalExec - startExec);
+                            System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
-                }
+                    is_first_done = true;
+                    pcs.release();
+                    chairs.release();
+                    System.out.println("Pcs and Chairs released");
+                    total_time = System.nanoTime()-start_time;
+                }else System.out.println("Request denied!");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
-        isRunning = false;
+        is_running = false;
     }
 
     public void executionTime() {
 //        System.out.println("Executando thread: " + this.type + " - " + this.cycles + " - " + this.queueTime);
-;
         try {
             long startExec = System.nanoTime();
             Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
             long finalExec = System.nanoTime();
-            this.executionTime += (finalExec - startExec);
-            if (this.isFirstDone) {
+            this.execution_time += (finalExec - startExec);
+            if (this.is_first_done) {
 
-                System.out.println( Thread.currentThread().threadId() +"-"+ executionTime/1000000L);
+                System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        this.isFirstDone = true;
+        this.is_first_done = true;
     }
 
     public void finalprocessPrint() {
         System.out.print("Type: " + type);
         System.out.print(" Cycles: " + cycles);
-        System.out.print(" Start Time: " + this.startTime / 1000000L + "ms ");
-        System.out.print(" Execution Time: " + this.executionTime /1000000L+ "ms ");
-        System.out.print(" Queue Time: " + queueTime /1000000L + "ms ");
-        System.out.println(" Total Time: " + totalTime /1000000L + "ms ");
+        System.out.print(" Start Time: " + this.start_time / 1000000L + "ms ");
+        System.out.print(" Execution Time: " + this.execution_time /1000000L+ "ms ");
+        System.out.print(" Queue Time: " + queue_time /1000000L + "ms ");
+        System.out.println(" Total Time: " + total_time /1000000L + "ms ");
     }
 
-    public boolean freelancerRequest(){
+    public boolean freelancerRequest(long time){
         try {
-            if (pcs.availablePermits() >= 1) {//erro de conseguir e no momento de executar não ter mais a permit
-                isRunning = true;
-                pcs.acquire();
-                if (chairs.availablePermits() >= 1) {
-                    chairs.acquire();
-                    long execTime = System.nanoTime();
-                    executionTime();
-                    execTime = System.nanoTime() - execTime;
-                    pcs.release();
-                    chairs.release();
-                } else {
-                    pcs.release();
-                }
-            }
+            return pcs.tryAcquire(time, TimeUnit.MILLISECONDS) && chairs.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public boolean gamerRequest(long time){
+        try {
+            return pcs.tryAcquire(time, TimeUnit.MILLISECONDS) && headsets.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public boolean pcsRequest(long time){
+        try {
+            return pcs.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public boolean chairsRequest(long time){
+        try {
+            return chairs.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public boolean headsetsRequest(long time){
+        try {
+            return headsets.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     public boolean isFirstDone() {
-        return isFirstDone;
+        return is_first_done;
     }
 
     public boolean isDone() {
-        return isDone;
+        return is_done;
     }
 
     public char getType() {
@@ -197,7 +235,7 @@ public class Process implements Runnable {
     }
 
     public boolean isRunning() {
-        return isRunning;
+        return is_running;
     }
     public void setId(String id){
         this.id=id;
