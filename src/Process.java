@@ -3,7 +3,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Process implements Runnable {
     final long CYCLE_TIME=100;
-    final long TRY_AQUIRE_TIME=100;
+    final long TRY_AQUIRE_TIME=1000;
     private final char type; // G for gamer, F for freelancer, S for student
     private boolean is_first_done;
     private boolean is_done;
@@ -51,7 +51,6 @@ public class Process implements Runnable {
                             long finalExec = System.nanoTime();
                             this.execution_time += (finalExec - startExec);
                             if (this.is_first_done) {
-
                                 System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
                             }
                         } catch (InterruptedException e) {
@@ -75,7 +74,6 @@ public class Process implements Runnable {
                             long finalExec = System.nanoTime();
                             this.execution_time += (finalExec - startExec);
                             if (this.is_first_done) {
-
                                 System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
                             }
                         } catch (InterruptedException e) {
@@ -182,7 +180,7 @@ public class Process implements Runnable {
         System.out.print(" Cycles: " + cycles);
         System.out.print(" Start Time: " + this.start_time / 1000000L + "ms ");
         System.out.print(" Execution Time: " + this.execution_time /1000000L+ "ms ");
-        System.out.print(" Queue Time: " + queue_time /1000000L + "ms ");
+        System.out.print(" Queue Time: " + (total_time-execution_time) /1000000L + "ms ");
         System.out.println(" Total Time: " + total_time /1000000L + "ms ");
     }
 

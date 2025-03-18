@@ -1,7 +1,7 @@
 import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
 
-/*TODO Como evitar o starvation ex.: se uma fila for grande o sufiente e o café fechar antes ocorreu starvation?
+/*TODO estamos no caminho correto? como corrigir o erro da ultima execução? O que mais acrescentar? O semaphore gerencia o deadlock ou não?
 TODO como checar starvation e deadlock?
 */
 public class App {
@@ -12,12 +12,12 @@ public class App {
         ProcessCreator creator = new ProcessCreator(pcs, headsets, chairs);
         LinkedList<Process> processes = creator.getProcess();
         LinkedList<Process> finished_processes = new LinkedList<>();
-        LinkedList<Thread> threadsRunning = new LinkedList<>();
+        LinkedList<Thread> threads_running = new LinkedList<>();
         Thread thread = new Thread(creator);
         thread.start();
         Thread.sleep(200);
 
-        while (thread.isAlive() || !processes.isEmpty() || isRunning(threadsRunning)) {
+        while (thread.isAlive() || !processes.isEmpty() || isRunning(threads_running)) {
             if (processes.isEmpty()) {
                 Thread.sleep(2000);
                 break;
@@ -37,7 +37,7 @@ public class App {
                 Process process = creator.getProcess().get(aux);
                 Thread t = new Thread(process);
                 t.start();
-                threadsRunning.add(t);
+                threads_running.add(t);
             }
 
         }
@@ -63,11 +63,11 @@ public class App {
             process.finalprocessPrint();
         }
     }
-    public static boolean isRunning(LinkedList<Thread> threadsRunning) {
+    public static boolean isRunning(LinkedList<Thread> threads_running) {
         LinkedList<Thread> toRemove = new LinkedList<>();
         boolean running = false;
 
-        for (Thread t : threadsRunning) {
+        for (Thread t : threads_running) {
             if (!t.isAlive()) {
                 toRemove.add(t); // Marca a thread para remoção
             } else {
@@ -76,8 +76,7 @@ public class App {
         }
 
         // Remove as threads finalizadas após a iteração para evitar erros de concorrência
-        threadsRunning.removeAll(toRemove);
-
+        threads_running.removeAll(toRemove);
         return running;
     }
 }
