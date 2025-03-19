@@ -2,43 +2,38 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class Process implements Runnable {
-    final long CYCLE_TIME=100;
+    final long CYCLE_TIME=625;
     final long TRY_AQUIRE_TIME=1000;
+
     private final char type; // G for gamer, F for freelancer, S for student
     private boolean is_first_done;
     private boolean is_done;
     private boolean is_running;
     private long cycles;
-    private String id;
-
+    //Tempos
+    private final long start_time; // Tempo de início em ns
+    private long total_time; // Tempo total
+    private long execution_time; // Tempo execução
+    //Semáforos
     private final Semaphore pcs;
     private final Semaphore headsets;
     private final Semaphore chairs;
-
-    private final long start_time; // Tempo de início em ns
-    private long queue_time; // Tempo na fila
-    private long total_time; // Tempo total
-    private long execution_time; // Tempo execução
-
     Process(char type, int cycles, Semaphore pcs, Semaphore headsets, Semaphore chairs) {
-        this.is_running = false;
-        this.id="";
         this.type = type;
-        this.cycles = cycles;
-        this.queue_time = 0;
-        this.total_time = 0;
-        this.execution_time = 0;
         this.is_first_done = false;
         this.is_done = false;
+        this.is_running = false;
+        this.cycles = cycles;
+        this.start_time = System.nanoTime(); // Pegando o tempo atual no momento da criação da thread
+        this.total_time = 0;
+        this.execution_time = 0;
         this.pcs = pcs;
         this.headsets = headsets;
         this.chairs = chairs;
-        this.start_time = System.nanoTime(); // Pegando o tempo atual no momento da criação da thread
     }
 
     @Override
     public void run() {
-        long startRunTime=System.nanoTime();
         is_running = true;
         if (is_first_done && !is_done) {//Primeira parte pronta
             if (type == 'G') {
@@ -158,23 +153,6 @@ public class Process implements Runnable {
         is_running = false;
     }
 
-    public void executionTime() {
-//        System.out.println("Executando thread: " + this.type + " - " + this.cycles + " - " + this.queueTime);
-        try {
-            long startExec = System.nanoTime();
-            Thread.sleep(CYCLE_TIME * cycles);//espera o tempo de execução da "tarefa"
-            long finalExec = System.nanoTime();
-            this.execution_time += (finalExec - startExec);
-            if (this.is_first_done) {
-
-                System.out.println( Thread.currentThread().threadId() +"-"+ execution_time/1000000L);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        this.is_first_done = true;
-    }
-
     public void finalprocessPrint() {
         System.out.print("Type: " + type);
         System.out.print(" Cycles: " + cycles);
@@ -184,58 +162,20 @@ public class Process implements Runnable {
         System.out.println(" Total Time: " + total_time /1000000L + "ms ");
     }
 
-    public boolean freelancerRequest(long time){
-        try {
-            return pcs.tryAcquire(time, TimeUnit.MILLISECONDS) && chairs.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public boolean gamerRequest(long time){
-        try {
-            return pcs.tryAcquire(time, TimeUnit.MILLISECONDS) && headsets.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public boolean pcsRequest(long time){
-        try {
-            return pcs.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public boolean chairsRequest(long time){
-        try {
-            return chairs.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public boolean headsetsRequest(long time){
-        try {
-            return headsets.tryAcquire(time, TimeUnit.MILLISECONDS);//tenta adquirir as licensas pelo tempo
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean isFirstDone() {
-        return is_first_done;
+    public char getType() {
+        return type;
     }
 
     public boolean isDone() {
         return is_done;
     }
-
-    public char getType() {
-        return type;
+    public long getQueueTimeMs(){
+        return (total_time-execution_time)/1000000L;
     }
-
+    public long getExecutionTimeMs(){
+        return (execution_time)/1000000L;
+    }
     public boolean isRunning() {
         return is_running;
-    }
-    public void setId(String id){
-        this.id=id;
     }
 }

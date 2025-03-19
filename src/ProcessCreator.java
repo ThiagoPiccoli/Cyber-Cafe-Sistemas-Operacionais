@@ -13,9 +13,9 @@ public class ProcessCreator implements Runnable {
     }
     @Override
     public void run() {
-        for (int aux = 0; aux < 100; aux++) {
+        for (int aux = 0; aux < 200; aux++) {
             try {
-                Thread.sleep(50L);
+                Thread.sleep(500L);
                 char type = ' ';
                 int cycles = (int) Math.round((Math.random() * 8)) + 2;
                 int intType = (int) Math.round((Math.random() * 2));
