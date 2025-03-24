@@ -25,7 +25,7 @@ public class Process implements Runnable {
         this.is_first_done = false;
         this.is_done = false;
         this.is_running = false;
-        this.start_time = System.nanoTime(); // Pegando o tempo atual no momento da criação da thread
+        this.start_time = System.nanoTime();
         this.total_time = 0;
         this.execution_time = 0;
         this.cycle_time = cycle_time;
@@ -38,7 +38,7 @@ public class Process implements Runnable {
     @Override
     public void run() {
         is_running = true;
-        if (is_first_done && !is_done) {//Primeira parte pronta
+        if (is_first_done && !is_done) {
             if (type == 'G') {
                 try {
                     if(chairs.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS)){
@@ -62,7 +62,7 @@ public class Process implements Runnable {
                     if(headsets.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS)){
                         long startExec = System.nanoTime();
                         try {
-                            Thread.sleep(cycle_time * cycles);//espera o tempo de execução da "tarefa"
+                            Thread.sleep(cycle_time * cycles);
                             long finalExec = System.nanoTime();
                             this.execution_time += (finalExec - startExec);
                         } catch (InterruptedException e) {
@@ -76,13 +76,12 @@ public class Process implements Runnable {
                     throw new RuntimeException(e);
                 }
             }
-        } else if (type == 'S') {//está aparentemente correto, mas TODO ainda temos que reposicionar na fila
+        } else if (type == 'S') {
             try {
                 if (pcs.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS)) {
                     long startExec = System.nanoTime();
-                    //System.out.println("pcs acquired");
                     try {
-                        Thread.sleep(cycle_time * cycles);//espera o tempo de execução da "tarefa"
+                        Thread.sleep(cycle_time * cycles);
                         long finalExec = System.nanoTime();
                         this.execution_time += (finalExec - startExec);
                     } catch (InterruptedException e) {
@@ -90,7 +89,6 @@ public class Process implements Runnable {
                     }
                     is_done = true;
                     pcs.release();
-                    //System.out.println("pcs released");
                     total_time = System.nanoTime() - start_time;
                     is_done = true;
                 }
@@ -101,9 +99,8 @@ public class Process implements Runnable {
             try {
                 if(pcs.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS) && headsets.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS)){
                     long startExec = System.nanoTime();
-                    //System.out.println("Pcs and Headsets acquired");
                     try {
-                        Thread.sleep(cycle_time * cycles);//espera o tempo de execução da "tarefa"
+                        Thread.sleep(cycle_time * cycles);
                         long finalExec = System.nanoTime();
                         this.execution_time += (finalExec - startExec);
                     } catch (InterruptedException e) {
@@ -122,7 +119,7 @@ public class Process implements Runnable {
                 if(pcs.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS) && chairs.tryAcquire(try_acquire_time, TimeUnit.MILLISECONDS)){
                     long startExec = System.nanoTime();
                     try {
-                        Thread.sleep(cycle_time * cycles);//espera o tempo de execução da "tarefa"
+                        Thread.sleep(cycle_time * cycles);
                         long finalExec = System.nanoTime();
                         this.execution_time += (finalExec - startExec);
                     } catch (InterruptedException e) {

@@ -2,7 +2,6 @@ import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
 
 /*
-TODO Report de uma fila com todos processos
 Informações da simulação
 1 seg tempo real = 8 min de simulação
 60 seg tempo real = 8 horas de simulação
@@ -32,8 +31,8 @@ public class App {
 //        args[5]="500";
 //        args[6]="500";
 //        args[7]="200";
-//        args[8]="G";
-        //
+//        args[8]="R";
+
         Semaphore pcs = new Semaphore(Integer.parseInt(args[0]));
         Semaphore headsets = new Semaphore(Integer.parseInt(args[1]));
         Semaphore chairs = new Semaphore(Integer.parseInt(args[2]));
